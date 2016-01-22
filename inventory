@@ -1,0 +1,18 @@
+# Application servers
+[server]
+10.0.0.103
+10.0.0.104
+10.0.0.105
+
+# Database server
+#[db]
+#192.168.60.6
+
+# Group 'multi' with all servers
+[multi:children]
+server
+
+# Variables that will be applied to all servers
+[multi:vars]
+ansible_ssh_user=vagrant
+ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
