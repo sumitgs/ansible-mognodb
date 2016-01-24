@@ -1,21 +1,61 @@
 ---
 - hosts: server
-  sudo: yes
+  become: yes
 
   tasks:
+    - name: create the hosts file for all machine
+      template: src=hosts.j2 dest=/etc/hosts
+
+    - name: creating mongod user
+      user: name=mongod
+
+    - name: create the data directory
+      file: path=/data/ owner=mongod group=mongod state=directory
+
     - name: get software for apt repositoty management
       apt: name={{ item }} state=installed
       with_items:
         - python-apt
+        - ufw
+
     - name: Import the public key used by the package management system
       apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=EA312927 state=present
+
     - name: Add MongoDB repository
       shell: >
         echo "deb http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+
     - name: install mongodb
       apt: pkg=mongodb-org state=latest update_cache=yes
       notify:
         - start mongodb
+
+    - name: allow everything and enable UFW
+      ufw: state=enabled policy=allow
+
+    - name: create data directory for mongodb
+      file: path=/data/db owner=mongod group=mongod state=directory mode=0755
+
+    - name: create log directory for mongodb
+      file: path=/var/log/mongodb owner=mongod group=mongod state=directory mode=0755
+
+    - name: create process directory for mongodb
+      file: path=/var/run/mongodb owner=mongod group=mongod state=directory mode=0755
+
+    - name: create the mongodb configuration file
+      template: src=mongod.conf.j2 dest=/etc/mongod.conf mode=0644
+
+    - name: create the file to initialize the mongo replica set
+      template: src=repset_init.j2 dest=/tmp/repset_init.js
+
+    - name: pause for a while
+      pause: seconds=20
+
+    - name: initialize the replica set
+      shell: /usr/bin/mongo --port "27017" /tmp/repset.init.js
+
   handlers:
     - name: start mongodb
       service: name=mongod state=started
+    - name: restart iptables
+      service: name=iptables state=restarted
