@@ -33,6 +33,12 @@
     - name: allow everything and enable UFW
       ufw: state=enabled policy=allow
 
+    - name: Confiure  directory
+      file: state=directory path=/etc/sysconfig/ owner=root group=root 
+
+    - name: Create the iptables file
+      template: src=iptables.j2 dest=/etc/sysconfig/iptables owner=root group=root mode=0644
+
     - name: create data directory for mongodb
       file: path=/data/db owner=mongod group=mongod state=directory mode=0755
 
@@ -42,20 +48,23 @@
     - name: create process directory for mongodb
       file: path=/var/run/mongodb owner=mongod group=mongod state=directory mode=0755
 
-    - name: create the mongodb configuration file
-      template: src=mongod.conf.j2 dest=/etc/mongod.conf mode=0644
+    - name: Configure mongodb
+      template: src=mongod.conf.j2 dest=/etc/mongod.conf owner=root group=root mode=0644
 
-    - name: create the file to initialize the mongo replica set
-      template: src=repset_init.j2 dest=/tmp/repset_init.js
+#    - name: create the file to initialize the mongo replica set
+#      template: src=repset_init.j2 dest=/tmp/repset_init.js
 
-    - name: pause for a while
-      pause: seconds=20
+#    - name: pause for a while
+#      pause: seconds=20
 
-    - name: initialize the replica set
-      shell: /usr/bin/mongo --port "27017" /tmp/repset.init.js
+#   - name: initialize the replica set
+#      shell: /usr/bin/mongo --port "27017" /tmp/repset.init.js
 
   handlers:
     - name: start mongodb
       service: name=mongod state=started
     - name: restart iptables
       service: name=iptables state=restarted
+
+
+
