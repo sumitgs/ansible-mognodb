@@ -13,10 +13,12 @@
       file: path=/data/ owner=mongod group=mongod state=directory
 
     - name: get software for apt repositoty management
-      apt: name={{ item }} state=installed
+      apt: name={{ item }} state=absent
       with_items:
-        - python-apt
         - ufw
+
+    - name: stopping firewall
+      service: name=ufw state=stopped
 
     - name: Import the public key used by the package management system
       apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=EA312927 state=present
@@ -30,14 +32,14 @@
       notify:
         - start mongodb
 
-    - name: allow everything and enable UFW
-      ufw: state=enabled policy=allow
+#    - name: allow everything and enable UFW
+#      ufw: state=enabled policy=allow
 
-    - name: Confiure  directory
-      file: state=directory path=/etc/sysconfig/ owner=root group=root 
+#    - name: Confiure  directory
+#      file: path=/etc/sysconfig/ owner=mongod group=mongod state=directory mode=0755 
 
-    - name: Create the iptables file
-      template: src=iptables.j2 dest=/etc/sysconfig/iptables owner=root group=root mode=0644
+#    - name: Create the iptables file
+#      template: src=iptables.j2 dest=/etc/sysconfig/iptables owner=mongod group=mongod mode=0644	
 
     - name: create data directory for mongodb
       file: path=/data/db owner=mongod group=mongod state=directory mode=0755
@@ -51,20 +53,9 @@
     - name: Configure mongodb
       template: src=mongod.conf.j2 dest=/etc/mongod.conf owner=root group=root mode=0644
 
-#    - name: create the file to initialize the mongo replica set
-#      template: src=repset_init.j2 dest=/tmp/repset_init.js
-
-#    - name: pause for a while
-#      pause: seconds=20
-
-#   - name: initialize the replica set
-#      shell: /usr/bin/mongo --port "27017" /tmp/repset.init.js
-
   handlers:
     - name: start mongodb
       service: name=mongod state=started
-    - name: restart iptables
-      service: name=iptables state=restarted
 
 
 
